@@ -1,0 +1,2 @@
+mixpanel
+-e git+https://github.com/toshiapp/toshi-services-lib.git@production#egg=toshi-services

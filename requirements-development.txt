@@ -1,0 +1,1 @@
+-e git+https://github.com/toshiapp/toshi-services-lib.git#egg=toshi-services

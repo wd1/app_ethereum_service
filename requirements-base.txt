@@ -1,0 +1,5 @@
+#PYTHON3
+redis==2.10.5
+asyncpg==0.9.0
+aioredis==1.0.0
+msgpack-python==0.4.8

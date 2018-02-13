@@ -1,0 +1,3 @@
+testing.postgresql
+testing.redis
+blockies==0.0.1

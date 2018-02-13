@@ -1,0 +1,618 @@
+FORMAT: 1A
+HOST: https://ethereum.service.tokenbrowser.com
+
+# Toshi Ethereum Service
+
+This service is a light service that sits ontop of a standard ethereum node and provides helper functions for creating and sending transactions.
+
+# Group Transactions
+
+## Transaction Skeleton [/v1/tx/skel]
+
+This endpoint creates an unsigned transaction and returns the rlp encoded data back to the caller.
+
+Optionally the caller can provide a `none`, `gas` and `gasPrice` values to override the defaults.
+
+Note: A `nonce` for the transaction is picked based on the next available nonce for the given source address,
+so it is important that the same address is used to sign the returned skeleton.
+
+### Create a new unsigned transaction [POST]
+
++ Request (application/json)
+
+        {
+            "from": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a",
+            "to": "0xdb089a4f9a8c5f17040b4fc51647e942b5fc601d",
+            "value": 1000000000000000000
+        }
+
++ Request (application/json)
+
+        {
+            "from": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a",
+            "to": "0xdb089a4f9a8c5f17040b4fc51647e942b5fc601d",
+            "gas": 25000,
+            "gasPrice": 20000000000,
+            "nonce": 1
+            "value": 1000000000000000000,
+	    "data": "0xffffffff"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "tx": "0xec831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a764000080",
+            "nonce": "0x1",
+            "gas": "0x61a8",
+            "gas_price": "0x4a817c800",
+            "value": "0xde0b6b3a7640000"
+        }
+
+## Transactions [/v1/tx]
+
+### Send transaction [POST]
+
+This has two different options. It either accepts the same transaction hash returned by the skeleton generation endpoint as well as the signature to authorise that, or it can simply accept an rlp encoded signed transaction. Additionally a request can be signed, this is required if it's desired that the recipient of the transaction should know who (i.e. which toshi identity) the transaction has originated from.
+
++ Request (application/json)
+
+        {
+            "tx": "0xec831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a764000080",
+            "signature": "0x09dd3b801d027a8e3b53b2f7d5b6753e5cd785c08d2d5bea41ed6226bddca9e32a5a35544647c1f9441ea888fa41dac20fc9db0805a1f94f3124a3e132eb7b8001"
+        }
+
++ Request (application/json)
+
+        {
+            "tx": "0xf86f831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a7640000801ca009dd3b801d027a8e3b53b2f7d5b6753e5cd785c08d2d5bea41ed6226bddca9e3a02a5a35544647c1f9441ea888fa41dac20fc9db0805a1f94f3124a3e132eb7b80"
+
+        }
+
++ Request (application/json)
+
+    + Headers
+
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+    + Body
+        {
+            "tx": "0xf86f831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a7640000801ca009dd3b801d027a8e3b53b2f7d5b6753e5cd785c08d2d5bea41ed6226bddca9e3a02a5a35544647c1f9441ea888fa41dac20fc9db0805a1f94f3124a3e132eb7b80"
+        }
+
++ Response 200 (application/json)
+
+        {
+            "tx_hash": "0xfde977a1ebd89cb3d0f17ce85efedca087788ddb50576c9b976c46f2eba21465"
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "invalid_signature",
+                    "message": "Invalid Signature"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "insufficient_funds",
+                    "message": "Insufficient Funds"
+                }
+            ]
+        }
+
+
+# Group Queries
+
+## Transaction [/v1/tx/{tx_hash}]
+
++ Parameters
+    + tx_hash (string) - Transaction hash
+
+### Get Transaction [GET]
+
+Returns the details of a transaction.
+
++ Response 200 (application/json)
+
+        {
+            "transactionIndex": "0x00",
+            "raw": "0xf86c831000008504a817c80082520894056db290f8ba3250ca64a45d16284d04bc6f5fbf8502540be400801ca0114655db4898a6580f0abfc53fc0c0a88110724abf8d41f2abf206c69d7d4c82a01ed2cdf6939484ef6aebc39ce5662363b82140106bbc374a0f1381b6948214b0",
+            "input": "0x",
+            "nonce": "0x100000",
+            "gas": "0x5208",
+            "blockHash": "0xfc6e2a636c945fb3eade5d180e99bc1969480b522c2dde5727677dbac9594863",
+            "value": "0x02540be400",
+            "gasPrice": "0x04a817c800",
+            "creates": None,
+            "blockNumber": "0x01",
+            "to": "0x056db290f8ba3250ca64a45d16284d04bc6f5fbf",
+            "from": "0xde3d2d9dd52ea80f7799ef4791063a5458d13913",
+            "hash": "0x2f321aa116146a9bc62b61c76508295f708f42d56340c9e613ebfc27e33f240c"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "not_found",
+                    "message": "Not Found"
+                }
+            ]
+        }
+
+## SOFA Payment [/v1/tx/{tx_hash}?format=sofa]
+
++ Parameters
+    + tx_hash (string) - Transaction hash
+
+### Get Transaction [GET]
+
+Returns the details of a transaction as a SOFA message.
+
++ Response 200 (application/json)
+
+        SOFA::Payment:{
+            "value": "0x02540be400",
+            "toAddress": "0x056db290f8ba3250ca64a45d16284d04bc6f5fbf",
+            "fromAddress": "0xde3d2d9dd52ea80f7799ef4791063a5458d13913",
+            "txHash": "0x2f321aa116146a9bc62b61c76508295f708f42d56340c9e613ebfc27e33f240c"
+        }
+
++ Response 404 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "not_found",
+                    "message": "Not Found"
+                }
+            ]
+        }
+
+
+## Get Address Balance [/v1/balance/{address}]
+
++ Parameters
+    + address (string) - Ethereum address
+
+### Get Balance [GET]
+
+Returns the balance of the given address. Two values are returned, `confirmed_balance` is the balance of the address that has been confirmed by the ethereum network. `unconfirmed_balance` is the confirmed balance plus or minus the value (as well as estimated fees for outgoing transactions) for any pending transactions that have yet to be confirmed by the network.
+
++ Response 200 (application/json)
+
+        {
+            "confirmed_balance": "0x2b4cf2cc8a310",
+            "unconfirmed_balance": "0x2b4cf2cc8a310"
+        }
+
+
+# Group Notifications
+
+## Register for apple push notifications [/v1/apn/register]
+
+### APN Registration [POST]
+
+Register for APN push notifications. This links a toshi identity to a push notification toshi and an ethereum address. This will enable push notifications for the given addresses. If no address is given, this will default to the toshi id.
+
++ Request (application/json)
+
+    + Headers
+
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+    + Body
+
+        {
+            "registration_id": "64be4fe95ba967bb533f0c240325942b9e1f881b5cd2982568a305dd4933e0bd",
+            "address": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a"
+        }
+
++ Response 204
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "invalid_signature",
+                    "message": "Invalid Signature"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "invalid_timestamp",
+                    "message": "The difference between the timestamp and the current time is too large"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "missing_arguments",
+                    "message": "Missing arguments"
+                }
+            ]
+        }
+
+## Register for google push notifications [/v1/gcm/register]
+
+### GCM Registration [POST]
+
+Register for Google Cloud Messaging push notifications. This links a toshi identity to a push notification toshi and an ethereum address. This will enable push notifications for the given addresses. If no address is given, this will default to the toshi id.
+
++ Request (application/json)
+
+    + Headers
+
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+    + Body
+
+        {
+            "registration_id": "64be4fe95ba967bb533f0c240325942b9e1f881b5cd2982568a305dd4933e0bd",
+            "address": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a"
+        }
+
++ Response 204
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "invalid_signature",
+                    "message": "Invalid Signature"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "invalid_timestamp",
+                    "message": "The difference between the timestamp and the current time is too large"
+                }
+            ]
+        }
+
++ Response 400 (application/json)
+
+        {
+            "errors": [
+                {
+                    "id": "missing_arguments",
+                    "message": "Missing arguments"
+                }
+            ]
+        }
+
+# Group Utils
+
+## Timestamp generation [/v1/timestamp]
+
+Used to retrieve a current timestamp from the server for use in signing other requests.
+
+### Get Timestamp [GET]
+
++ Response 200 (application/json)
+
+        {
+            "timestamp": 1481291348
+        }
+
+# Group Websocket connections
+
+All the above endpoints can be accessed through a websocket based json-rpc interface.
+
+## Connect to websocket [/v1/ws]
+
+### Connect [GET]
+
++ Request
+
+    + Headers
+
+        Upgrade: websocket
+        Connection: Upgrade
+        Sec-WebSocket-Key: YcwVhryr7tewuz3a7XAs8Q==
+        Sec-WebSocket-Version: 13
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+## Deregister apple push notifications [/v1/apn/deregister]
+
+### APN Deregistration [POST]
+
+Deregister the given address from the given registration_id. If no address is given, all addresses matching the registration id will be deregistered.
+
++ Request (application/json)
+
+    + Headers
+
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+    + Body
+
+        {
+            "registration_id": "64be4fe95ba967bb533f0c240325942b9e1f881b5cd2982568a305dd4933e0bd",
+            "address": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a"
+        }
+
++ Response 204
+
+## Deregister Google Cloud Messaging [/v1/gcm/deregister]
+
+### GCM Deregistration [POST]
+
+Deregister the given address from the given registration_id. If no address is given, all addresses matching the registration id will be deregistered.
+
++ Request (application/json)
+
+    + Headers
+
+        Toshi-ID-Address: 0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a
+        Toshi-Signature: 0xc39a479a92fe8d626324ff82a33684610ecd6b50714f59542a1ea558220ec6246a9193dd481078417b3b44d55933989587459d3dd50295d4da67d6580ac8646801
+        Toshi-Timestamp: 1480077346
+
+    + Body
+
+        {
+            "registration_id": "64be4fe95ba967bb533f0c240325942b9e1f881b5cd2982568a305dd4933e0bd",
+            "address": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a"
+        }
+
++ Response 204
+
+# Group JSON-RPC methods
+
+## Get Balance `get_balance`
+
+Requests the given address's balance.
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "get_balance",
+    "params": ["0x39bf9e501e61440b4b268d7b2e9aa2458dd201bb"]
+}
+```
+
+
+**Response**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": {
+         "confirmed_balance": "0x2b4cf2cc8a310",
+         "unconfirmed_balance": "0x2b4cf2cc8a310"
+    }
+}
+```
+
+## Create Transaction Skeleton `create_transaction_skeleton`
+
+Creates an unsigned transaction with the the given arguments, using network defaults for the optional arguments and the network nonce from the given `from` address. Responds with the rlp encoded transaction.
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "create_transaction_skeleton",
+    "params": {
+        "from": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a",
+        "to": "0xdb089a4f9a8c5f17040b4fc51647e942b5fc601d",
+        "value": 1000000000000000000
+    }
+}
+```
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "create_transaction_skeleton",
+    "params": {
+        "from": "0x676f7cb80c9ff6a55e8992d94bac9a3212282c3a",
+        "to": "0xdb089a4f9a8c5f17040b4fc51647e942b5fc601d"
+        "gas": 25000,
+        "gas_price": 20000000000,
+        "nonce": "0x10000",
+        "value": 1000000000000000000,
+	"data": "0xffffffff"
+    }
+}
+```
+
+**Response**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": ["0xec831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a764000080"]
+}
+```
+
+## Send Transaction `send_transaction`
+
+Sends a signed transaction to the network. Responds with the transaction's hash.
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "send_transaction",
+    "params": {
+        "tx": "0xec831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a764000080"
+    }
+}
+```
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "send_transaction",
+    "params": {
+        "tx": "0xec831002e88504a817c80082520894db089a4f9a8c5f17040b4fc51647e942b5fc601d880de0b6b3a764000080",
+        "signature": "0x09dd3b801d027a8e3b53b2f7d5b6753e5cd785c08d2d5bea41ed6226bddca9e32a5a35544647c1f9441ea888fa41dac20fc9db0805a1f94f3124a3e132eb7b8001"
+    }
+}
+```
+
+**Response**
+
+```
+{
+   "jsonrpc": "2.0",
+    "id": 1,
+    "result": ["0xfde977a1ebd89cb3d0f17ce85efedca087788ddb50576c9b976c46f2eba21465"]
+}
+```
+
+# Transaction Subscriptions
+
+Similar to the registrations for push notifications for new transactions sent to/from an address.
+
+The core difference being that the subscriptions made during the lifetime of the websocket only exists until the websocket is closed. Upon reconnection, a websocket client needs to re-subscribe for any addresses it's interested in.
+
+Notifications are sent as JSON-RPC notifications with the method `subscriptions`.
+
+e.g.
+
+```
+{
+    "jsonrpc": "2.0",
+    "method": "subscription",
+    "params": {
+        "subscription": "0x85h43d8a49eeb85d32cf465507dd71d507100c1",
+        "transaction": {
+            "hash": "0xc6ef2fc5426d6ad6fd9e2a26abeab0aa2411b7ab17f30a99d3cb96aed1d1055b",
+            "nonce": "0x",
+            "blockHash": "0xbeab0aa2411b7ab17f30a99d3cb9c6ef2fc5426d6ad6fd9e2a26a6aed1d1055b",
+            "blockNumber": "0x15df",
+            "transactionIndex": "0x1",
+            "from": "0x407d73d8a49eeb85d32cf465507dd71d507100c1",
+            "to": "0x85h43d8a49eeb85d32cf465507dd71d507100c1",
+            "value": "0x7f110"
+            "gas": "0x7f110"
+            "gasPrice": "0x09184e72a000",
+            "input": "0x603880600c6000396000f300603880600c6000396000f3603880600c6000396000f360",
+        },
+        "sender_toshi_id": "0x39bf9e501e61440b4b268d7b2e9aa2458dd201bb"
+    }
+}
+```
+
+- `subscription`: the subscribed address for which this notification was generated.
+- `transaction`: the transaction details (the same as returned by the node, i.e. https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_gettransactionbyhash).
+- `sender_toshi_id`: the toshi id address of the user whom sent the transaction (null if the transaction was sent anonymously).
+
+## Subscribe `subscribe`
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "subscribe",
+    "params": ["0x39bf9e501e61440b4b268d7b2e9aa2458dd201bb"]
+}
+```
+
+**Response**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": true
+}
+```
+
+## Unsubscribe `unsubscribe`
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "unsubscribe",
+    "params": ["0x39bf9e501e61440b4b268d7b2e9aa2458dd201bb"]
+}
+```
+
+**Response**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": true
+}
+```
+
+## List Subscriptions `list_subscriptions`
+
+**Request**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "list_subscriptions"
+}
+```
+
+**Response**
+
+```
+{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "result": ["0x39bf9e501e61440b4b268d7b2e9aa2458dd201bb"]
+}
+```

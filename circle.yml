@@ -1,0 +1,46 @@
+machine:
+  pre:
+    - cd /opt/circleci/.pyenv; git pull
+  python:
+    version: 3.6.4
+  node:
+    version: 6.7.0
+  environment:
+    PATH: "${PATH}:~/.yarn/bin"
+    STAGE: $CIRCLE_BRANCH
+
+dependencies:
+  cache_directories:
+    - ~/.ethash
+    - ~/.yarn
+  pre:
+    - sudo apt-get install -y software-properties-common
+    - sudo add-apt-repository -y ppa:ethereum/ethereum
+    - sudo apt-get update
+    - sudo apt-get install -y ethereum ethminer solc
+    - if [[ ! -d ~/.ethash ]]; then ethminer -D 0; fi
+    - wget http://parity-downloads-mirror.parity.io/v1.7.11/x86_64-unknown-linux-gnu/parity_1.7.11_amd64.deb
+    - sudo dpkg -i parity_1.7.11_amd64.deb
+    - python -m pip install --upgrade setuptools
+    - pip install -r requirements-testing.txt
+    - ./configure_environment.sh
+    - pip install --upgrade -r requirements.txt
+  post:
+    - if [ -z `which aglio` ]; then yarn global --cache-folder ~/.yarn/cache add aglio --prefix ~/.yarn; fi
+
+test:
+  override:
+    - python -m tornado.testing discover -s toshieth/test
+
+deployment:
+  development:
+    branch: master
+    commands:
+      - git clone --depth 1 git@github.com:toshiapp/docs.git $HOME/docs
+      - $HOME/docs/deploy-blueprint.sh $CIRCLE_PROJECT_REPONAME docs/api.apib $CIRCLE_SHA1
+      - git push -f git@heroku.com:token-eth-service-development.git $CIRCLE_SHA1:master
+  production:
+    branch: production
+    commands:
+      - git push -f git@heroku.com:token-eth-service.git $CIRCLE_SHA1:master
+      - git push -f git@heroku.com:toshi-eth-service.git $CIRCLE_SHA1:master
